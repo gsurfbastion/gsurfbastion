@@ -9,7 +9,7 @@
             --bg-color: #0d1117;
             --container-bg: #161b22;
             --text-color: #c9d1d9;
-            --accent-color: #238636; /* Verde Don Corleone */
+            --accent-color: #238636;
             --border-color: #30363d;
         }
 
@@ -19,10 +19,11 @@
             font-family: 'Courier New', Courier, monospace; 
             display: flex; justify-content: center; align-items: center; 
             height: 100vh; margin: 0;
+            overflow: hidden;
         }
 
         .terminal {
-            width: 90%; max-width: 700px; height: 80vh;
+            width: 95%; max-width: 800px; height: 85vh;
             background: var(--container-bg);
             border: 1px solid var(--border-color);
             border-radius: 8px; display: flex; flex-direction: column;
@@ -33,36 +34,42 @@
             padding: 15px; border-bottom: 1px solid var(--border-color);
             font-weight: bold; text-transform: uppercase; letter-spacing: 2px;
             color: var(--accent-color); text-align: center;
+            font-size: 0.9rem;
         }
 
         #chat-window {
             flex: 1; overflow-y: auto; padding: 20px;
             display: flex; flex-direction: column; gap: 15px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border-color) var(--bg-color);
         }
 
-        .msg { padding: 10px 15px; border-radius: 5px; max-width: 80%; line-height: 1.4; }
-        .user { align-self: flex-end; background: #21262d; border: 1px solid var(--border-color); }
+        .msg { padding: 12px 18px; border-radius: 5px; max-width: 85%; line-height: 1.5; font-size: 0.95rem; word-wrap: break-word; }
+        .user { align-self: flex-end; background: #21262d; border: 1px solid var(--border-color); color: #fff; }
         .cipriano { align-self: flex-start; background: #052309; border: 1px solid var(--accent-color); color: #afffaf; }
 
         .input-area {
             padding: 20px; border-top: 1px solid var(--border-color);
-            display: flex; gap: 10px;
+            display: flex; gap: 10px; background: #12161d;
         }
 
         input {
             flex: 1; background: #0d1117; border: 1px solid var(--border-color);
             color: white; padding: 12px; border-radius: 4px; outline: none;
+            font-family: inherit;
         }
 
         input:focus { border-color: var(--accent-color); }
 
         button {
             background: var(--accent-color); color: white; border: none;
-            padding: 0 20px; border-radius: 4px; cursor: pointer;
+            padding: 0 25px; border-radius: 4px; cursor: pointer;
             font-weight: bold; text-transform: uppercase;
+            font-family: inherit; transition: 0.3s;
         }
 
-        button:hover { opacity: 0.8; }
+        button:hover { background: #2ea043; }
+        button:disabled { background: #161b22; color: #484f58; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -72,8 +79,8 @@
             <div class="msg cipriano">Aguardando ordens. O que deseja investigar hoje?</div>
         </div>
         <div class="input-area">
-            <input type="text" id="pergunta" placeholder="Digite sua requisição..." onkeypress="handleKey(event)">
-            <button onclick="enviar()">Executar</button>
+            <input type="text" id="pergunta" placeholder="Digite sua requisição..." autocomplete="off" onkeypress="handleKey(event)">
+            <button id="btn-executar" onclick="enviar()">Executar</button>
         </div>
     </div>
 
@@ -83,11 +90,19 @@
         async function enviar() {
             const input = document.getElementById('pergunta');
             const window = document.getElementById('chat-window');
-            const texto = input.value;
+            const btn = document.getElementById('btn-executar');
+            const texto = input.value.trim();
+            
             if (!texto) return;
 
             input.value = '';
+            input.disabled = true;
+            btn.disabled = true;
+
             window.innerHTML += `<div class="msg user"><strong>DIRETRIZ:</strong> ${texto}</div>`;
+            
+            const loadingId = "loading-" + Date.now();
+            window.innerHTML += `<div class="msg cipriano" id="${loadingId}"><strong>CIPRIANO:</strong> Processando requisição...</div>`;
             window.scrollTop = window.scrollHeight;
 
             const formData = new FormData();
@@ -97,14 +112,20 @@
                 const res = await fetch('/chat', { method: 'POST', body: formData });
                 const data = await res.json();
                 
-                 // O AJUSTE ESTÁ AQUI: data.resposta em vez de apenas data
-                const mensagemFinal = data.resposta || "Sem resposta do agente.";
+                const loadingElement = document.getElementById(loadingId);
+                const mensagemFinal = data.resposta || "Silêncio operacional. Nenhuma informação retornada.";
                 
-                window.innerHTML += `<div class="msg cipriano"><strong>CIPRIANO:</strong> ${mensagemFinal}</div>`;
+                loadingElement.innerHTML = `<strong>CIPRIANO:</strong> ${mensagemFinal}`;
             } catch (err) {
-                window.innerHTML += `<div class="msg cipriano" style="color: red;">ERRO NA COMUNICAÇÃO.</div>`;
+                const loadingElement = document.getElementById(loadingId);
+                loadingElement.style.color = "#ff7b72";
+                loadingElement.innerHTML = `<strong>ERRO:</strong> Falha na comunicação com a central de inteligência.`;
+            } finally {
+                input.disabled = false;
+                btn.disabled = false;
+                input.focus();
+                window.scrollTop = window.scrollHeight;
             }
-            window.scrollTop = window.scrollHeight;
         }
     </script>
 </body>
