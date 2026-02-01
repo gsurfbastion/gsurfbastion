@@ -40,9 +40,9 @@ def executar_agente(mensagem_usuario: str):
         return "Erro: GOOGLE_API_KEY não encontrada no ambiente."
     
     # AJUSTE DO MODELO: Usando o nome completo para evitar o erro 404
-    # 'gemini-1.5-flash-latest' costuma ser o mais estável para a v1beta
+    # 'gemini-3-flash-preview' costuma ser o mais estável para a v1beta
     model = ChatGoogleGenerativeAI(
-        model="gemini-1.5-flash-latest", 
+        model="gemini-3-flash-preview", 
         temperature=0,
         api_key=api_key
     )
