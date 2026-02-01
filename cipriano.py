@@ -8,7 +8,7 @@ from langchain_community.tools.tavily_search import TavilySearchResults
 load_dotenv()
 
 # ======================================================
-# TOOL — Web Search
+# TOOL — Web Search (OSINT)
 # ======================================================
 @tool
 def search_web(query: str) -> str:
@@ -17,14 +17,14 @@ def search_web(query: str) -> str:
     if not tavily_key:
         return "TAVILY_API_KEY não configurada no Render."
     
-    # O Tavily lerá a chave automaticamente da variável de ambiente TAVILY_API_KEY
+    # O Tavily utiliza a chave do ambiente automaticamente
     search = TavilySearchResults(max_results=3) 
     return search.invoke(query)
 
 tools = [search_web]
 
 # ======================================================
-# AGENT LOGIC
+# AGENT LOGIC — CIPRIANO
 # ======================================================
 system_message = """
 Você é Cipriano, um agente estratégico de Inteligência e Segurança,
@@ -34,33 +34,40 @@ com a presença, autoridade e frieza calculada de Don Corleone.
 """
 
 def executar_agente(mensagem_usuario: str):
-    """Função que o app.py vai chamar"""
+    """Função de interface com o app.py"""
     api_key = os.getenv("GOOGLE_API_KEY")
     
     if not api_key:
-        return "Erro: GOOGLE_API_KEY não encontrada no ambiente do Render."
+        return "Erro: GOOGLE_API_KEY não encontrada no ambiente."
     
-    # Modelo estável para produção
+    # Modelo atualizado para versão estável
     model = ChatGoogleGenerativeAI(
         model="gemini-3-flash-preview", 
         temperature=0,
         api_key=api_key
     )
     
-    # AJUSTE REALIZADO: Alterado 'state_modifier' para 'prompt'
+    # Criação do agente com o parâmetro correto 'prompt'
     agent = create_react_agent(
         model=model, 
         tools=tools, 
         prompt=system_message
     )
     
-    # Executa o grafo do agente
+    # Preparação da entrada
     inputs = {"messages": [("user", mensagem_usuario)]}
     config = {"configurable": {"thread_id": "thread-1"}}
     
     try:
+        # Execução do grafo
         resultado = agent.invoke(inputs, config)
-        # Retorna o conteúdo da última mensagem (a resposta do agente)
-        return resultado["messages"][-1].content
+        
+        # AJUSTE DE EXTRAÇÃO:
+        # Pegamos a última mensagem da lista 'messages'
+        ultima_mensagem = resultado["messages"][-1]
+        
+        # Retornamos apenas o conteúdo textual (string)
+        return ultima_mensagem.content
+        
     except Exception as e:
-        return f"Erro na execução do agente: {str(e)}"
+        return f"Cipriano informa: Erro na operação técnica. Detalhes: {str(e)}"
