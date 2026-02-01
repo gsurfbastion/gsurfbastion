@@ -39,8 +39,7 @@ def executar_agente(mensagem_usuario: str):
     if not api_key:
         return "Erro: GOOGLE_API_KEY não encontrada no ambiente."
     
-    # AJUSTE DO MODELO: Usando o nome completo para evitar o erro 404
-    # 'gemini-3-flash-preview' costuma ser o mais estável para a v1beta
+    # AJUSTE DO MODELO
     model = ChatGoogleGenerativeAI(
         model="gemini-3-flash-preview", 
         temperature=0,
@@ -56,7 +55,7 @@ def executar_agente(mensagem_usuario: str):
     inputs = {"messages": [("user", mensagem_usuario)]}
     config = {"configurable": {"thread_id": "thread-1"}}
     
-try:
+    try:
         resultado = agent.invoke(inputs, config)
         
         # Acessamos a última mensagem
@@ -66,16 +65,18 @@ try:
         if hasattr(ultima_mensagem, 'content'):
             conteudo = ultima_mensagem.content
             
-            # CASO 1: O conteúdo é uma string simples (comportamento antigo/padrão)
+            # CASO 1: O conteúdo é uma string simples
             if isinstance(conteudo, str):
                 return conteudo
                 
-            # CASO 2: O conteúdo é uma lista de blocos (comportamento atual do Gemini/Anthropic)
-            # Ex: [{'type': 'text', 'text': 'Olá...'}]
+            # CASO 2: O conteúdo é uma lista de blocos (Correção do JSON bruto)
             elif isinstance(conteudo, list):
-                # Junta apenas as partes que são texto
                 texto_final = "".join([bloco.get("text", "") for bloco in conteudo if bloco.get("type") == "text"])
                 return texto_final
                 
         # Fallback: converte o objeto inteiro para string se não achar .content
         return str(ultima_mensagem)
+
+    except Exception as e:
+        # Este é o bloco que estava faltando!
+        return f"Cipriano informa: Falha na requisição. Verifique as credenciais. (Erro: {str(e)})"
