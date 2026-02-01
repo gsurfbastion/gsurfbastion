@@ -95,14 +95,17 @@
             
             if (!texto) return;
 
+            // Bloqueia interface
             input.value = '';
             input.disabled = true;
             btn.disabled = true;
 
+            // Exibe mensagem do usuário
             window.innerHTML += `<div class="msg user"><strong>DIRETRIZ:</strong> ${texto}</div>`;
             
+            // Cria ID para o balão de carregamento
             const loadingId = "loading-" + Date.now();
-            window.innerHTML += `<div class="msg cipriano" id="${loadingId}"><strong>CIPRIANO:</strong> Processando requisição...</div>`;
+            window.innerHTML += `<div class="msg cipriano" id="${loadingId}"><strong>CIPRIANO:</strong> Processando...</div>`;
             window.scrollTop = window.scrollHeight;
 
             const formData = new FormData();
@@ -112,14 +115,28 @@
                 const res = await fetch('/chat', { method: 'POST', body: formData });
                 const data = await res.json();
                 
+                // Debug no console (F12)
+                console.log("Resposta bruta recebida:", data);
+
                 const loadingElement = document.getElementById(loadingId);
-                const mensagemFinal = data.resposta || "Silêncio operacional. Nenhuma informação retornada.";
+                
+                // LÓGICA DE EXTRAÇÃO À PROVA DE FALHAS
+                let mensagemFinal;
+                if (data && typeof data.resposta === 'string') {
+                    mensagemFinal = data.resposta;
+                } else if (typeof data === 'string') {
+                    mensagemFinal = data;
+                } else {
+                    // Se ainda assim for um objeto, transforma em texto para não exibir [object Object]
+                    mensagemFinal = JSON.stringify(data);
+                }
                 
                 loadingElement.innerHTML = `<strong>CIPRIANO:</strong> ${mensagemFinal}`;
             } catch (err) {
+                console.error("Erro na comunicação:", err);
                 const loadingElement = document.getElementById(loadingId);
                 loadingElement.style.color = "#ff7b72";
-                loadingElement.innerHTML = `<strong>ERRO:</strong> Falha na comunicação com a central de inteligência.`;
+                loadingElement.innerHTML = `<strong>ERRO:</strong> Falha na comunicação estratégica.`;
             } finally {
                 input.disabled = false;
                 btn.disabled = false;
