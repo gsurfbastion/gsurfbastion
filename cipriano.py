@@ -56,17 +56,26 @@ def executar_agente(mensagem_usuario: str):
     inputs = {"messages": [("user", mensagem_usuario)]}
     config = {"configurable": {"thread_id": "thread-1"}}
     
-    try:
+try:
         resultado = agent.invoke(inputs, config)
         
-        # AJUSTE DE EXTRAÇÃO (Resolve as imagens com texto gigante):
-        # Acessamos a última mensagem e pegamos apenas o campo .content
+        # Acessamos a última mensagem
         ultima_mensagem = resultado["messages"][-1]
         
+        # Lógica de extração robusta
         if hasattr(ultima_mensagem, 'content'):
-            return ultima_mensagem.content
+            conteudo = ultima_mensagem.content
+            
+            # CASO 1: O conteúdo é uma string simples (comportamento antigo/padrão)
+            if isinstance(conteudo, str):
+                return conteudo
+                
+            # CASO 2: O conteúdo é uma lista de blocos (comportamento atual do Gemini/Anthropic)
+            # Ex: [{'type': 'text', 'text': 'Olá...'}]
+            elif isinstance(conteudo, list):
+                # Junta apenas as partes que são texto
+                texto_final = "".join([bloco.get("text", "") for bloco in conteudo if bloco.get("type") == "text"])
+                return texto_final
+                
+        # Fallback: converte o objeto inteiro para string se não achar .content
         return str(ultima_mensagem)
-        
-    except Exception as e:
-        # Se o modelo 'latest' falhar, tentamos o nome simples como fallback
-        return f"Cipriano informa: Falha na requisição. Verifique as credenciais. (Erro: {str(e)})"
