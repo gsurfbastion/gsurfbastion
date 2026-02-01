@@ -8,7 +8,7 @@ from langchain_community.tools.tavily_search import TavilySearchResults
 load_dotenv()
 
 # ======================================================
-# TOOL — Web Search
+# TOOL — Web Search (OSINT)
 # ======================================================
 @tool
 def search_web(query: str) -> str:
@@ -17,13 +17,14 @@ def search_web(query: str) -> str:
     if not tavily_key:
         return "TAVILY_API_KEY não configurada no Render."
     
+    # O Tavily lerá a chave automaticamente da variável de ambiente TAVILY_API_KEY
     search = TavilySearchResults(max_results=3) 
     return search.invoke(query)
 
 tools = [search_web]
 
 # ======================================================
-# AGENT LOGIC
+# AGENT LOGIC - CIPRIANO
 # ======================================================
 system_message = """
 Você é Cipriano, um agente estratégico de Inteligência e Segurança,
@@ -39,13 +40,14 @@ def executar_agente(mensagem_usuario: str):
     if not api_key:
         return "Erro: GOOGLE_API_KEY não encontrada no ambiente do Render."
     
-    # Modelo estável
+    # Modelo atualizado para versão estável (resolve erros de resposta suja)
     model = ChatGoogleGenerativeAI(
-        model="gemini-3-flash-preview", 
+        model="gemini-1.5-flash", 
         temperature=0,
         api_key=api_key
     )
     
+    # Criação do agente utilizando o parâmetro 'prompt'
     agent = create_react_agent(
         model=model, 
         tools=tools, 
@@ -56,12 +58,14 @@ def executar_agente(mensagem_usuario: str):
     config = {"configurable": {"thread_id": "thread-1"}}
     
     try:
+        # Executa o grafo do agente
         resultado = agent.invoke(inputs, config)
         
-        # O SEGREDO ESTÁ AQUI:
-        # Pegamos a última mensagem ['messages'][-1] e extraímos apenas o .content
-        resposta_final = resultado["messages"][-1].content
+        # EXTRAÇÃO PRECISA: Pegamos apenas o texto da última mensagem
+        # Isso remove assinaturas digitais e metadados da tela
+        ultima_mensagem = resultado["messages"][-1]
         
-        return resposta_final
+        return ultima_mensagem.content
+        
     except Exception as e:
-        return f"Erro na execução do agente: {str(e)}"
+        return f"Cipriano informa: Erro na operação. Detalhes: {str(e)}"
