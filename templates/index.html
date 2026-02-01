@@ -96,7 +96,11 @@
             try {
                 const res = await fetch('/chat', { method: 'POST', body: formData });
                 const data = await res.json();
-                window.innerHTML += `<div class="msg cipriano"><strong>CIPRIANO:</strong> ${data.resposta}</div>`;
+                
+                 // O AJUSTE ESTÁ AQUI: data.resposta em vez de apenas data
+                const mensagemFinal = data.resposta || "Sem resposta do agente.";
+                
+                window.innerHTML += `<div class="msg cipriano"><strong>CIPRIANO:</strong> ${mensagemFinal}</div>`;
             } catch (err) {
                 window.innerHTML += `<div class="msg cipriano" style="color: red;">ERRO NA COMUNICAÇÃO.</div>`;
             }
