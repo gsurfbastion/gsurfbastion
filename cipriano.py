@@ -65,21 +65,22 @@ def executar_agente(mensagem_usuario: str):
     if not api_key:
         return "Erro CRÍTICO: GOOGLE_API_KEY não encontrada."
     
+    # Modelo alterado para gemini-3-flash-preview para garantir estabilidade de quota no Render
     model = ChatGoogleGenerativeAI(
         model="gemini-3-flash-preview", 
-        temperature=0,
+        temperature=0.4,
         api_key=api_key
     )
     
     try:
-        # Criamos o agente sem o modificador de estado para evitar erros de versão
+        # Criamos o agente sem o modificador de estado para evitar erros de versão entre ambientes
         agent = create_react_agent(
             model=model, 
             tools=tools
         )
         
-        # Injetamos o System Prompt manualmente como a primeira mensagem da conversa
-        # Isso funciona em praticamente todas as versões do LangGraph
+        # Injetamos o System Prompt manualmente na lista de mensagens
+        # Essa abordagem é universal para as versões atuais do LangGraph
         inputs = {
             "messages": [
                 ("system", system_message), 
@@ -91,7 +92,7 @@ def executar_agente(mensagem_usuario: str):
         
         resultado = agent.invoke(inputs, config)
         
-        # Extração segura do conteúdo
+        # Extração segura do conteúdo da última mensagem gerada
         ultima_mensagem = resultado["messages"][-1]
         return ultima_mensagem.content
 
