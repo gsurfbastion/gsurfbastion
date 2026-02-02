@@ -3,6 +3,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
+from typing import Optional
 from cipriano import executar_agente
 import uvicorn
 
@@ -13,6 +14,7 @@ templates = Jinja2Templates(directory="templates")
 
 class Pergunta(BaseModel):
     pergunta: str
+    imagem: Optional[str] = None  # Agora aceita imagem (opcional)
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
@@ -26,7 +28,8 @@ async def chat(payload: Pergunta):
     e devolve um JSON organizado.
     """
     try:
-        resposta_texto = executar_agente(payload.pergunta)
+        # Passamos a pergunta E a imagem (se houver) para o agente
+        resposta_texto = executar_agente(payload.pergunta, payload.imagem)
         return {"resposta": resposta_texto}
     except Exception as e:
         return {"resposta": f"Erro estratégico: {str(e)}"}

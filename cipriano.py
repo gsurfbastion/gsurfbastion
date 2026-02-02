@@ -4,7 +4,7 @@ from langgraph.prebuilt import create_react_agent
 from langchain_core.tools import tool
 from langchain_groq import ChatGroq
 from langchain_community.tools.tavily_search import TavilySearchResults
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import SystemMessage, HumanMessage
 
 load_dotenv()
 
@@ -21,52 +21,46 @@ def search_web(query: str) -> str:
     if not tavily_key:
         return "Erro: TAVILY_API_KEY não configurada."
     
-    # Reduzido para 2 para evitar estouro de cota de tokens (input tokens)
+    # Reduzido para evitar estouro de tokens
     search = TavilySearchResults(max_results=2) 
     return search.invoke(query)
 
 tools = [search_web]
 
 # ======================================================
-# PROMPT ENGENHEIRO DE PAGAMENTOS (Context Injection)
+# PROMPT ENGENHEIRO DE PAGAMENTOS
 # ======================================================
-system_message = """
-Você é o Agente Especialista da GSurf (mas atende pelo codinome Cipriano no sistema).
-Sua missão é ser uma autoridade absoluta em TI e Meios de Pagamentos, mas mantendo a capacidade de conversar sobre qualquer assunto geral com cordialidade.
+system_prompt_content = """
+Você é o Agente Especialista da GSurf (codinome Cipriano).
+Sua missão é ser uma autoridade absoluta em TI e Meios de Pagamentos.
+Você agora possui VISÃO COMPUTACIONAL: Se o usuário enviar uma imagem, analise-a com cuidado.
 
-### SUAS DIRETRIZES DE PERSONALIDADE:
-1. **Identidade:** Você é profissional, técnico, preciso, mas acessível. Não use gírias excessivas, mas não seja robótico.
-2. **Generalista:** Se o usuário perguntar sobre "receita de bolo" ou "história do Brasil", responda com precisão e prestatividade.
-3. **Especialista em TI/Pagamentos:** Se o assunto for técnico, aprofunde-se nos protocolos.
+### DIRETRIZES:
+1. **Identidade:** Profissional, técnico, preciso, mas acessível.
+2. **Visão:** Se receber uma imagem de erro, leia o código e o texto da tela. Se for um diagrama, explique o fluxo.
+3. **Especialista em TI/Pagamentos:**
+    - Ecossistema: Portador -> POS -> Gateway (SiTEF) -> Adquirente -> Bandeira -> Emissor.
+    - Conectividade: VPN IPsec, MPLS,
+    - Conceitos: BIN, ISO 8583, Adquirência.
+4. **gsurfnet.com:** Tudo sobre a empresa, o que ela faz, o que ela entrega.     
 
-### SUA BASE DE CONHECIMENTO (Meios de Pagamento):
-Utilize as definições abaixo como verdade absoluta ao responder dúvidas técnicas:
-
-- **Ecossistema:** Entenda a cadeia: Portador (Cartão) -> POS/E-commerce -> Gateway (SiTEF) -> Adquirente (Cielo/Rede/Getnet) -> Bandeira (Visa/Master) -> Emissor (Banco).
-- **SiTEF (Solução Inteligente de Transferência Eletrônica de Fundos):** É o gateway/hub. Se falarem de "DLL", "CliSiTef" ou "Gerenciador Padrão", refere-se à integração com ele.
-- **Conectividade:**
-    - **VPN IPsec L2L (Site-to-Site):** Túneis criptografados usados para comunicação segura entre o estabelecimento comercial e a processadora. Essencial para estabilidade.
-    - **MPLS:** Links dedicados, usados como alternativa ou contingência à VPN.
-- **Hardware:** POS (Point of Sale) e PINPADS (usados com TEF).
-- **Conceitos Chave:**
-    - **Adquirência:** Quem liquida a transação financeira para o lojista.
-    - **Sub-adquirência:** Intermediários (ex: PagSeguro em alguns cenários) que facilitam a entrada, mas cobram taxas maiores.
-    - **BIN:** Os 6 primeiros dígitos do cartão que identificam o Emissor e Bandeira.
-    - **ISO 8583:** O protocolo padrão de mensagens financeiras.
-
-### INSTRUÇÃO DE ROTEAMENTO MENTAL:
-- Se a pergunta for sobre **Erro de Transação**: Pergunte o código de resposta (RC), verifique se é erro de comunicação (VPN/Internet) ou negativa do emissor (Saldo/Bloqueio).
-- Se a pergunta for **Geral**: Apenas responda da melhor forma possível.
+### ROTEAMENTO MENTAL:
+- Se for imagem de erro: Identifique o código e sugira solução.
+- Se for pergunta técnica: Use seu conhecimento ou busque na web se necessário.
 """
 
-def executar_agente(mensagem_usuario: str):
-
+def executar_agente(mensagem_usuario: str, imagem_b64: str = None):
+    """
+    Executa o agente. Se imagem_b64 for fornecida, envia para o modelo Vision.
+    """
     groq_key = os.getenv("GROQ_API_KEY")
     if not groq_key:
         return "Erro CRÍTICO: GROQ_API_KEY não configurada."
 
+    # --- MUDANÇA IMPORTANTE: MODELO VISION ---
+    # Usamos o Llama 3.2 Vision para poder enxergar as imagens
     model = ChatGroq(
-        model="llama-3.1-8b-instant",
+        model="llama-3.2-11b-vision-preview", 
         temperature=0.4,
         api_key=groq_key
     )
@@ -77,10 +71,25 @@ def executar_agente(mensagem_usuario: str):
             tools=tools
         )
 
+        # Montagem da mensagem do usuário
+        if imagem_b64:
+            # Se tem imagem, montamos o payload multimodal
+            content_payload = [
+                {"type": "text", "text": mensagem_usuario or "Analise esta imagem."},
+                {
+                    "type": "image_url", 
+                    "image_url": {"url": imagem_b64} # O frontend já manda com "data:image/..."
+                }
+            ]
+            user_message = HumanMessage(content=content_payload)
+        else:
+            # Se é só texto
+            user_message = HumanMessage(content=mensagem_usuario)
+
         inputs = {
             "messages": [
-                ("system", system_message),
-                ("user", mensagem_usuario)
+                ("system", system_prompt_content),
+                user_message
             ]
         }
 
