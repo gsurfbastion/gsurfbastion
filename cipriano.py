@@ -4,6 +4,7 @@ from langgraph.prebuilt import create_react_agent
 from langchain_core.tools import tool
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.tools.tavily_search import TavilySearchResults
+from langchain_core.messages import SystemMessage
 
 load_dotenv()
 
@@ -70,30 +71,29 @@ def executar_agente(mensagem_usuario: str):
         api_key=api_key
     )
     
-    # Versão corrigida: O create_react_agent agora costuma aceitar o 
-    # state_modifier ou as instruções devem ser injetadas no prompt.
-    # Para garantir compatibilidade com as versões 0.2+, usamos state_modifier:
-    
     try:
+        # Criamos o agente sem o modificador de estado para evitar erros de versão
         agent = create_react_agent(
             model=model, 
-            tools=tools, 
-            # Alterado de messages_modifier para state_modifier
-            state_modifier=system_message 
+            tools=tools
         )
         
-        inputs = {"messages": [("user", mensagem_usuario)]}
+        # Injetamos o System Prompt manualmente como a primeira mensagem da conversa
+        # Isso funciona em praticamente todas as versões do LangGraph
+        inputs = {
+            "messages": [
+                ("system", system_message), 
+                ("user", mensagem_usuario)
+            ]
+        }
+        
         config = {"configurable": {"thread_id": "session-1"}}
         
         resultado = agent.invoke(inputs, config)
         
-        # O retorno do LangGraph é um dicionário com a chave "messages"
-        # Pegamos a última mensagem da lista
+        # Extração segura do conteúdo
         ultima_mensagem = resultado["messages"][-1]
-        
         return ultima_mensagem.content
 
     except Exception as e:
-        # Se 'state_modifier' ainda der erro, sua versão é muito antiga.
-        # Tente atualizar o pacote: pip install -U langgraph
         return f"Sistema GSurf informa: Erro no processamento. ({str(e)})"
