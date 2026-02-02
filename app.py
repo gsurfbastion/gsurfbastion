@@ -1,7 +1,8 @@
 import os
-from fastapi import FastAPI, Request, Form
+from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
 from cipriano import executar_agente
 import uvicorn
 
@@ -10,22 +11,22 @@ app = FastAPI()
 # Configura onde estão os arquivos HTML
 templates = Jinja2Templates(directory="templates")
 
+class Pergunta(BaseModel):
+    pergunta: str
+
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-    """Exibe o site (Tema Dark)"""
+    """Exibe o site"""
     return templates.TemplateResponse("index.html", {"request": request})
 
 @app.post("/chat")
-async def chat(pergunta: str = Form(...)):
+async def chat(payload: Pergunta):
     """
-    Recebe o formulário do site, chama o Cipriano
+    Recebe JSON do site, chama o Cipriano
     e devolve um JSON organizado.
     """
     try:
-        # Chama a função que ajustamos no cipriano.py
-        resposta_texto = executar_agente(pergunta)
-        
-        # Retorna um dicionário que o JS entende como objeto
+        resposta_texto = executar_agente(payload.pergunta)
         return {"resposta": resposta_texto}
     except Exception as e:
         return {"resposta": f"Erro estratégico: {str(e)}"}
