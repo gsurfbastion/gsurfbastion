@@ -21,8 +21,8 @@ def search_web(query: str) -> str:
     if not tavily_key:
         return "Erro: TAVILY_API_KEY não configurada."
     
-    # Aumentei para 5 resultados para ter mais contexto técnico
-    search = TavilySearchResults(max_results=5) 
+    # Reduzido para 2 para evitar estouro de cota de tokens (input tokens)
+    search = TavilySearchResults(max_results=2) 
     return search.invoke(query)
 
 tools = [search_web]
@@ -66,7 +66,7 @@ def executar_agente(mensagem_usuario: str):
         return "Erro CRÍTICO: GOOGLE_API_KEY não encontrada."
     
     model = ChatGoogleGenerativeAI(
-        model="gemini-2.5-pro", 
+        model="gemini-1.5-flash", 
         temperature=0.4,
         api_key=api_key
     )
