@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 from langgraph.prebuilt import create_react_agent
 from langchain_core.tools import tool
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_groq import ChatGroq
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_core.messages import SystemMessage
 
@@ -60,41 +60,39 @@ Utilize as definições abaixo como verdade absoluta ao responder dúvidas técn
 """
 
 def executar_agente(mensagem_usuario: str):
-    api_key = os.getenv("GOOGLE_API_KEY")
-    
-    if not api_key:
-        return "Erro CRÍTICO: GOOGLE_API_KEY não encontrada."
-    
-    # Modelo alterado para gemini-3-flash-preview para garantir estabilidade de quota no Render
-    model = ChatGoogleGenerativeAI(
-        model="gemini-3-flash-preview", 
+
+    groq_key = os.getenv("GROQ_API_KEY")
+    if not groq_key:
+        return "Erro CRÍTICO: GROQ_API_KEY não configurada."
+
+    model = ChatGroq(
+        model="llama-3.1-8b-instant",
         temperature=0.4,
-        api_key=api_key
+        api_key=groq_key
     )
-    
+
     try:
-        # Criamos o agente sem o modificador de estado para evitar erros de versão entre ambientes
         agent = create_react_agent(
-            model=model, 
+            model=model,
             tools=tools
         )
-        
-        # Injetamos o System Prompt manualmente na lista de mensagens
-        # Essa abordagem é universal para as versões atuais do LangGraph
+
         inputs = {
             "messages": [
-                ("system", system_message), 
+                ("system", system_message),
                 ("user", mensagem_usuario)
             ]
         }
-        
+
         config = {"configurable": {"thread_id": "session-1"}}
-        
+
         resultado = agent.invoke(inputs, config)
-        
-        # Extração segura do conteúdo da última mensagem gerada
+
         ultima_mensagem = resultado["messages"][-1]
-        return ultima_mensagem.content
+        if hasattr(ultima_mensagem, "content"):
+            return ultima_mensagem.content
+
+        return str(ultima_mensagem)
 
     except Exception as e:
         return f"Sistema GSurf informa: Erro no processamento. ({str(e)})"
