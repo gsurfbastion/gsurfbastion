@@ -38,6 +38,7 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            position: relative;
         }
 
         /* HEADER */
@@ -61,9 +62,10 @@
             flex-direction: column;
             gap: 15px;
             scroll-behavior: smooth;
+            padding-bottom: 20px;
         }
 
-        .msg-row { display: flex; width: 100%; }
+        .msg-row { display: flex; width: 100%; margin-bottom: 10px; }
         .user-row { justify-content: flex-end; }
         .bot-row { justify-content: flex-start; }
 
@@ -79,14 +81,14 @@
         .user-msg { background: var(--user-msg-bg); color: #fff; border-bottom-right-radius: 4px; }
         .bot-msg { background: var(--bot-msg-bg); color: var(--text-color); border-bottom-left-radius: 4px; }
 
-        /* MARKDOWN STYLES (Tabelas, Listas) */
-        .bot-msg table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 0.9rem; }
-        .bot-msg th, .bot-msg td { border: 1px solid #ccc; padding: 6px; text-align: left; }
-        .bot-msg th { background-color: #d0d2d6; font-weight: 600; }
-        .bot-msg pre { background: #2d2d2d; color: #f8f8f2; padding: 10px; border-radius: 6px; overflow-x: auto; }
+        /* TABELAS E MARKDOWN */
+        .bot-msg table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 0.9rem; background: #fff; }
+        .bot-msg th, .bot-msg td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        .bot-msg th { background-color: #f2f2f2; font-weight: 600; }
         .bot-msg code { font-family: monospace; background: rgba(0,0,0,0.05); padding: 2px 4px; border-radius: 3px; }
+        .bot-msg pre { background: #2d2d2d; color: #f8f8f2; padding: 10px; border-radius: 6px; overflow-x: auto; }
 
-        /* IMAGENS NO CHAT */
+        /* IMAGENS */
         .msg-img-sent { max-width: 200px; border-radius: 8px; margin-bottom: 5px; display: block; border: 2px solid #004494; }
 
         /* INPUT AREA */
@@ -94,27 +96,33 @@
             border-top: 1px solid #ddd;
             padding: 15px;
             background: #fff;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
-        /* Preview de Imagem antes de enviar */
+        /* Preview de Imagem */
         #preview-area {
-            display: none;
-            padding-bottom: 10px;
+            display: none; /* Escondido por padrão */
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            border: 1px dashed #ccc;
+            width: fit-content;
         }
-        .preview-box {
-            position: relative;
-            display: inline-block;
-        }
-        .preview-box img { height: 80px; border-radius: 8px; border: 1px solid #ccc; }
+        .preview-box { position: relative; display: inline-block; }
+        .preview-box img { height: 80px; border-radius: 8px; display: block; }
         .btn-close-preview {
-            position: absolute; top: -8px; right: -8px;
+            position: absolute; top: -10px; right: -10px;
             background: #ff4d4f; color: white;
             border: none; border-radius: 50%;
-            width: 20px; height: 20px;
-            cursor: pointer; font-weight: bold; font-size: 12px;
+            width: 24px; height: 24px;
+            cursor: pointer; font-weight: bold; font-size: 14px;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
 
-        .input-controls { display: flex; gap: 10px; align-items: flex-end; }
+        .input-controls { display: flex; gap: 10px; align-items: center; }
         
         textarea {
             flex: 1;
@@ -122,31 +130,32 @@
             border-radius: 20px;
             border: 1px solid #ccc;
             resize: none;
-            height: 24px; /* Altura inicial */
+            height: 24px;
             font-family: inherit;
             max-height: 100px;
+            outline: none;
         }
-        textarea:focus { outline: 2px solid var(--primary-color); border-color: transparent; }
+        textarea:focus { border-color: var(--primary-color); }
 
         .btn-icon {
             background: none; border: none; cursor: pointer;
-            font-size: 1.3rem; padding: 10px; color: #555;
+            font-size: 1.5rem; padding: 5px 10px; color: #555;
             transition: color 0.2s;
         }
         .btn-icon:hover { color: var(--primary-color); }
         
         .btn-send {
             background: var(--primary-color); color: white;
-            border: none; padding: 10px 20px;
-            border-radius: 20px; font-weight: 600;
-            cursor: pointer;
+            border: none; padding: 0 25px; height: 45px;
+            border-radius: 25px; font-weight: 600;
+            cursor: pointer; transition: background 0.2s;
         }
+        .btn-send:hover { background: #004494; }
         .btn-send:disabled { background: #ccc; cursor: not-allowed; }
 
-        /* Loading Dots */
+        /* Loading */
         .typing::after { content: '...'; animation: typing 1.5s steps(4, end) infinite; }
         @keyframes typing { 0%, 100% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } }
-
     </style>
 </head>
 <body>
@@ -172,82 +181,112 @@
     <div class="input-wrapper">
         <div id="preview-area">
             <div class="preview-box">
-                <img id="img-preview" src="" alt="">
-                <button class="btn-close-preview" onclick="limparImagem()">×</button>
+                <img id="img-preview" src="" alt="Preview">
+                <button class="btn-close-preview" id="btn-remover-img">×</button>
             </div>
         </div>
 
         <div class="input-controls">
-            <input type="file" id="file-input" accept="image/*" style="display: none;" onchange="processarImagem(this)">
-            <button class="btn-icon" title="Anexar Imagem" onclick="document.getElementById('file-input').click()">📷</button>
+            <input type="file" id="file-input" accept="image/*" style="display: none;">
             
-            <textarea id="texto-input" placeholder="Descreva o problema..." onkeypress="verificarEnter(event)"></textarea>
+            <button class="btn-icon" id="btn-anexar" title="Anexar Imagem">📷</button>
             
-            <button class="btn-send" id="btn-enviar" onclick="enviarMensagem()">Enviar</button>
+            <textarea id="texto-input" placeholder="Descreva o problema..."></textarea>
+            
+            <button class="btn-send" id="btn-enviar">Enviar</button>
         </div>
     </div>
 </div>
 
 <script>
-    // --- LÓGICA DE SESSÃO ---
-    // Gera um ID único para este usuário/aba para manter a memória do bot ativa
+document.addEventListener("DOMContentLoaded", function() {
+    // === ELEMENTOS DO DOM ===
+    const chatWindow = document.getElementById('chat-window');
+    const textoInput = document.getElementById('texto-input');
+    const fileInput = document.getElementById('file-input');
+    const btnEnviar = document.getElementById('btn-enviar');
+    const btnAnexar = document.getElementById('btn-anexar');
+    const btnRemoverImg = document.getElementById('btn-remover-img');
+    const previewArea = document.getElementById('preview-area');
+    const imgPreview = document.getElementById('img-preview');
+
+    // === ESTADO ===
+    let imagemBase64 = null;
+    
+    // Gera ID de Sessão Único
     let sessionId = localStorage.getItem("gsurf_session_id");
     if (!sessionId) {
         sessionId = "sess_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
         localStorage.setItem("gsurf_session_id", sessionId);
     }
-    console.log("Session ID:", sessionId);
+    console.log("Session ID Ativo:", sessionId);
 
-    let imagemBase64 = null;
+    // === FUNÇÕES ===
 
-    // Ajuste automático da altura do textarea
-    const textarea = document.getElementById('texto-input');
-    textarea.addEventListener('input', function() {
+    // 1. Auto-resize do Textarea
+    textoInput.addEventListener('input', function() {
         this.style.height = 'auto';
         this.style.height = (this.scrollHeight) + 'px';
         if(this.value === '') this.style.height = '24px';
     });
 
-    function verificarEnter(e) {
+    // 2. Enviar com Enter
+    textoInput.addEventListener('keypress', function(e) {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             enviarMensagem();
         }
-    }
+    });
 
-    function processarImagem(input) {
-        if (input.files && input.files[0]) {
-            const file = input.files[0];
+    // 3. Clique no botão de anexo abre o seletor de arquivo
+    btnAnexar.addEventListener('click', () => {
+        fileInput.click();
+    });
+
+    // 4. Processar Imagem Selecionada
+    fileInput.addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+            const file = this.files[0];
             const reader = new FileReader();
+            
             reader.onload = function(e) {
                 imagemBase64 = e.target.result;
-                document.getElementById('img-preview').src = imagemBase64;
-                document.getElementById('preview-area').style.display = 'block';
+                imgPreview.src = imagemBase64;
+                previewArea.style.display = 'block'; // Mostra o preview
+                console.log("Imagem carregada na memória.");
             }
+            
             reader.readAsDataURL(file);
         }
-        // Limpa o value para permitir selecionar a mesma imagem se quiser
-        input.value = ''; 
-    }
+        // Limpa o input para permitir selecionar a mesma imagem se o usuário quiser trocar e voltar
+        this.value = ''; 
+    });
 
-    function limparImagem() {
+    // 5. Remover Imagem do Preview
+    btnRemoverImg.addEventListener('click', () => {
         imagemBase64 = null;
-        document.getElementById('preview-area').style.display = 'none';
-    }
+        previewArea.style.display = 'none';
+        imgPreview.src = '';
+    });
 
+    // 6. Função Principal de Envio
     async function enviarMensagem() {
-        const inputTexto = document.getElementById('texto-input');
-        const texto = inputTexto.value.trim();
-        const chatWindow = document.getElementById('chat-window');
-        const btnEnviar = document.getElementById('btn-enviar');
+        const texto = textoInput.value.trim();
 
-        if (!texto && !imagemBase64) return;
+        // Validação: Não envia se estiver tudo vazio
+        if (!texto && !imagemBase64) {
+            console.log("Tentativa de envio vazia.");
+            return;
+        }
 
-        // UI: Bloquear envio
-        inputTexto.disabled = true;
+        console.log("Enviando mensagem...");
+        
+        // Bloqueia Interface
+        textoInput.disabled = true;
         btnEnviar.disabled = true;
+        btnEnviar.innerText = "...";
 
-        // 1. Renderiza mensagem do usuário na tela
+        // Renderiza mensagem do usuário
         let userHtml = `<div class="msg-row user-row"><div class="msg user-msg">`;
         if (imagemBase64) {
             userHtml += `<img src="${imagemBase64}" class="msg-img-sent"><br>`;
@@ -256,36 +295,80 @@
         chatWindow.innerHTML += userHtml;
         chatWindow.scrollTop = chatWindow.scrollHeight;
 
-        // Salva dados para envio e limpa UI
+        // Prepara dados
         const payload = {
             pergunta: texto,
             imagem: imagemBase64,
-            session_id: sessionId // Enviando o ID da sessão!
+            session_id: sessionId
         };
 
-        inputTexto.value = '';
-        inputTexto.style.height = '24px';
-        limparImagem(); // Limpa preview visual
+        // Limpa Inputs VISUAIS (mas mantém payload na memória)
+        textoInput.value = '';
+        textoInput.style.height = '24px';
+        imagemBase64 = null;
+        previewArea.style.display = 'none';
 
-        // 2. Mostra indicador de digitação
+        // Indicador de Carregamento
         const loadingId = "loading-" + Date.now();
         chatWindow.innerHTML += `
             <div class="msg-row bot-row" id="${loadingId}">
-                <div class="msg bot-msg typing">Cipriano está analisando</div>
+                <div class="msg bot-msg typing">Analisando</div>
             </div>`;
         chatWindow.scrollTop = chatWindow.scrollHeight;
 
         try {
-            // 3. Envia para o Backend
+            // Requisição ao Backend
             const response = await fetch('/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
 
+            if (!response.ok) {
+                throw new Error(`Erro HTTP: ${response.status}`);
+            }
+
             const data = await response.json();
             
-            // Remove loading
-            document.getElementById(loadingId).remove();
+            // Remove loading e adiciona resposta
+            const loadingEl = document.getElementById(loadingId);
+            if (loadingEl) loadingEl.remove();
 
-            // Renderiza
+            // Usa Marked se disponível, senão texto puro
+            let botHtmlContent = "";
+            if (typeof marked !== 'undefined') {
+                botHtmlContent = marked.parse(data.resposta);
+            } else {
+                botHtmlContent = data.resposta;
+            }
+
+            chatWindow.innerHTML += `<div class="msg-row bot-row"><div class="msg bot-msg">${botHtmlContent}</div></div>`;
+
+        } catch (error) {
+            console.error("Erro no envio:", error);
+            const loadingEl = document.getElementById(loadingId);
+            if (loadingEl) loadingEl.remove();
+            
+            chatWindow.innerHTML += `
+                <div class="msg-row bot-row">
+                    <div class="msg bot-msg" style="color:red; font-weight:bold;">
+                        ⚠️ Erro ao conectar com o Cipriano. Verifique se o servidor (app.py) está rodando.
+                    </div>
+                </div>`;
+        } finally {
+            // Restaura Interface
+            textoInput.disabled = false;
+            btnEnviar.disabled = false;
+            btnEnviar.innerText = "Enviar";
+            textoInput.focus();
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+    }
+
+    // Adiciona evento de clique ao botão enviar
+    btnEnviar.addEventListener('click', enviarMensagem);
+});
+</script>
+
+</body>
+</html>
