@@ -10,7 +10,7 @@ from typing import Optional
 # Importamos a função do arquivo cipriano.py
 from cipriano import executar_agente
 
-app = FastAPI(title="GSurf AI Assistant")
+app = FastAPI(title="GSurf IA Assistant")
 
 # Configura diretório de templates
 # Certifique-se de ter uma pasta chamada 'templates' e o index.html dentro dela
