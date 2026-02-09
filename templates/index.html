@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GSurf | Intelligent Payment Gateway</title>
+    <title>GSurf | Bastion Engine</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -64,19 +64,6 @@
             font-size: 1.4rem; font-weight: 700; display: flex; align-items: center; gap: 12px;
         }
 
-        .btn-graph-toggle {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid var(--glass-border);
-            color: var(--text-main);
-            padding: 8px 15px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            transition: all 0.3s;
-            margin-right: 10px;
-        }
-        .btn-graph-toggle:hover { background: var(--primary); border-color: var(--primary); }
-
         .status-badge {
             background: rgba(49, 162, 76, 0.15); color: #4ade80;
             padding: 4px 12px; border-radius: 20px; font-size: 0.75rem;
@@ -103,10 +90,14 @@
         }
 
         .user-msg { background: var(--user-bubble); color: white; border-bottom-right-radius: 4px; }
-        .bot-msg { background: var(--bot-bubble); color: #e0e0e0; border-bottom-left-radius: 4px; border: 1px solid var(--glass-border); }
+        .bot-msg { 
+            background: var(--bot-bubble); color: #e0e0e0; 
+            border-bottom-left-radius: 4px; border: 1px solid var(--glass-border);
+            white-space: pre-wrap;
+        }
 
         .bot-msg table { width: 100%; border-collapse: collapse; margin: 15px 0; }
-        .bot-msg th, .bot-msg td { padding: 10px; border: 1px solid var(--glass-border); }
+        .bot-msg th, .bot-msg td { padding: 10px; border: 1px solid var(--glass-border); text-align: left; }
 
         .input-wrapper {
             padding: 25px 30px; background: rgba(0,0,0,0.2);
@@ -119,9 +110,12 @@
             border-radius: 30px; border: 1px solid var(--glass-border);
         }
 
-        textarea { flex: 1; background: transparent; border: none; color: white; outline: none; resize: none; }
+        textarea {
+            flex: 1; background: transparent; border: none; color: white;
+            font-size: 0.95rem; padding: 10px 0; resize: none; outline: none;
+        }
 
-        .btn-action { background: transparent; border: none; color: var(--text-dim); font-size: 1.2rem; cursor: pointer; }
+        .btn-action { background: transparent; border: none; color: var(--text-dim); font-size: 1.2rem; cursor: pointer; transition: 0.2s; }
         .btn-action:hover { color: var(--primary); }
 
         .btn-send {
@@ -131,12 +125,12 @@
         }
 
         /* Modal Grafo */
-        #graph-container {
+        #graph-modal {
             display: none; position: fixed; top: 50%; left: 50%;
             transform: translate(-50%, -50%); width: 85%; height: 75vh;
-            background: rgba(10, 11, 13, 0.95); backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border); border-radius: 24px;
-            z-index: 10000; padding: 25px; box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            background: rgba(10, 11, 13, 0.98); backdrop-filter: blur(20px);
+            border: 1px solid var(--primary); border-radius: 24px;
+            z-index: 10000; padding: 25px; box-shadow: 0 0 50px rgba(0,0,0,0.9);
         }
         #cy { width: 100%; height: 90%; border-radius: 15px; }
 
@@ -151,7 +145,7 @@
 
         #preview-area { display: none; margin-bottom: 15px; position: relative; width: fit-content; }
         .preview-box img { height: 100px; border-radius: 12px; border: 2px solid var(--primary); }
-        .btn-close-preview { position: absolute; top: -8px; right: -8px; background: #ef4444; border: none; border-radius: 50%; width: 22px; height: 22px; color: white; cursor: pointer; }
+        .btn-close-preview { position: absolute; top: -8px; right: -8px; background: #ef4444; border: none; border-radius: 50%; width: 22px; height: 22px; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center;}
 
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -164,9 +158,9 @@
             <i class="fa-solid fa-microchip logo-gsurf"></i>
             <span>GSurf <span style="font-weight: 300; opacity: 0.7;">Bastion</span></span>
         </div>
-        <div style="display: flex; align-items: center;">
-            <button class="btn-graph-toggle" id="btn-open-graph">
-                <i class="fa-solid fa-circle-nodes"></i> Mapa
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <button class="btn-action" onclick="toggleGraph()" title="Mapa de Conhecimento">
+                <i class="fa-solid fa-circle-nodes" style="color: var(--primary);"></i>
             </button>
             <div class="status-badge">
                 <span class="status-dot"></span> Online
@@ -177,8 +171,8 @@
     <div id="chat-window">
         <div class="msg-row bot-row">
             <div class="msg bot-msg">
-                <strong>Terminal Inicializado.</strong><br>
-                Sou o <strong>Bastion</strong>. Pronto para analisar logs ou fotos de terminais.
+                <strong>Sistemas Online.</strong><br>
+                Bem-vindo ao centro de diagnósticos GSurf. Sou o <strong>Bastion</strong>. Como posso ajudar com seu terminal hoje?
             </div>
         </div>
     </div>
@@ -194,16 +188,16 @@
             <input type="file" id="file-input" accept="image/*" style="display: none;">
             <button class="btn-action" id="btn-anexar"><i class="fa-solid fa-file-import"></i></button>
             <button class="btn-action" id="btn-camera-live"><i class="fa-solid fa-camera"></i></button>
-            <textarea id="texto-input" rows="1" placeholder="Descreva o incidente..."></textarea>
+            <textarea id="texto-input" rows="1" placeholder="Descreva o incidente ou anexe uma imagem..."></textarea>
             <button class="btn-send" id="btn-enviar"><i class="fa-solid fa-paper-plane"></i></button>
         </div>
     </div>
 </div>
 
-<div id="graph-container">
+<div id="graph-modal">
     <div style="display:flex; justify-content: space-between; margin-bottom: 15px;">
-        <span style="font-weight:600; color: var(--primary);">Mapa de Conhecimento GSurf</span>
-        <button class="btn-action" id="btn-close-graph"><i class="fa-solid fa-xmark"></i></button>
+        <span style="font-weight:600; color: var(--primary);">Network Knowledge Map</span>
+        <button class="btn-action" onclick="toggleGraph()"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div id="cy"></div>
 </div>
@@ -219,7 +213,7 @@
 </div>
 
 <footer class="footer-info">
-    &copy; 2026 GSurf Network S.A. &bull; Sistemas de Pagamento do Futuro
+    &copy; 2026 GSurf Network S.A. &bull; <i class="fa-solid fa-shield-halved"></i> Sistemas de Pagamento do Futuro
 </footer>
 
 <script>
@@ -235,49 +229,43 @@
         const cameraModal = document.getElementById('camera-modal');
         const video = document.getElementById('video-preview');
         const canvas = document.getElementById('canvas-capture');
-        const graphContainer = document.getElementById('graph-container');
 
         let imagemBase64 = null;
         let streamAtivo = null;
         let sessionId = localStorage.getItem("gsurf_session_id") || "sess_" + Math.random().toString(36).substr(2, 9);
         localStorage.setItem("gsurf_session_id", sessionId);
 
-        // --- LÓGICA DO GRAFO ---
-        document.getElementById('btn-open-graph').onclick = () => {
-            graphContainer.style.display = 'block';
-            initGraph();
+        // --- DINÂMICA DO GRAFO ---
+        window.toggleGraph = async function() {
+            const modal = document.getElementById('graph-modal');
+            const isVisible = modal.style.display === 'block';
+            modal.style.display = isVisible ? 'none' : 'block';
+            
+            if (!isVisible) {
+                try {
+                    const res = await fetch('/conhecimento');
+                    const elements = await res.json();
+                    
+                    cytoscape({
+                        container: document.getElementById('cy'),
+                        elements: elements,
+                        style: [
+                            { selector: 'node', style: { 'background-color': '#0062ff', 'label': 'data(label)', 'color': '#fff', 'text-valign': 'center', 'width': 80, 'height': 80, 'font-size': '12px' } },
+                            { selector: 'edge', style: { 'width': 3, 'line-color': '#4ade80', 'target-arrow-shape': 'triangle', 'target-arrow-color': '#4ade80', 'curve-style': 'bezier' } }
+                        ],
+                        layout: { name: 'cose' }
+                    });
+                } catch (e) { console.error("Erro ao carregar grafo:", e); }
+            }
         };
-        document.getElementById('btn-close-graph').onclick = () => graphContainer.style.display = 'none';
 
-        function initGraph() {
-            cytoscape({
-                container: document.getElementById('cy'),
-                elements: [
-                    { data: { id: 'gsurf', label: 'GSurf Core' } },
-                    { data: { id: 'tef', label: 'TEF IP' } },
-                    { data: { id: 'msitef', label: 'M-SiTEF' } },
-                    { data: { id: 'adq', label: 'Adquirentes' } },
-                    { data: { id: 'erro', label: 'Matrix Erros' } },
-                    { data: { source: 'gsurf', target: 'tef' } },
-                    { data: { source: 'tef', target: 'msitef' } },
-                    { data: { source: 'msitef', target: 'adq' } },
-                    { data: { source: 'gsurf', target: 'erro' } }
-                ],
-                style: [
-                    { selector: 'node', style: { 'background-color': '#0062ff', 'label': 'data(label)', 'color': '#fff', 'font-size': '12px', 'text-valign': 'center', 'width': '80', 'height': '80' } },
-                    { selector: 'edge', style: { 'width': 3, 'line-color': '#4ade80', 'target-arrow-shape': 'triangle', 'target-arrow-color': '#4ade80', 'curve-style': 'bezier' } }
-                ],
-                layout: { name: 'cose' }
-            });
-        }
-
-        // --- LÓGICA DE CÂMERA E ARQUIVOS ---
+        // --- CÂMERA E ARQUIVOS ---
         btnCameraLive.onclick = async () => {
             try {
                 streamAtivo = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
                 video.srcObject = streamAtivo;
                 cameraModal.style.display = 'flex';
-            } catch (err) { alert("Erro ao acessar câmera."); }
+            } catch (err) { alert("Câmera não disponível."); }
         };
 
         document.getElementById('btn-do-capture').onclick = () => {
@@ -296,7 +284,12 @@
         fileInput.onchange = function() {
             if (this.files[0]) {
                 const reader = new FileReader();
-                reader.onload = (e) => { imagemBase64 = e.target.result; imgPreview.src = imagemBase64; previewArea.style.display = 'block'; fileInput.value = ''; };
+                reader.onload = (e) => { 
+                    imagemBase64 = e.target.result; 
+                    imgPreview.src = imagemBase64; 
+                    previewArea.style.display = 'block'; 
+                    fileInput.value = '';
+                };
                 reader.readAsDataURL(this.files[0]);
             }
         };
@@ -312,17 +305,19 @@
 
             const userDiv = document.createElement('div');
             userDiv.className = 'msg-row user-row';
-            userDiv.innerHTML = `<div class="msg user-msg">${imagemBase64 ? `<img src="${imagemBase64}" style="width:100%; border-radius:10px; margin-bottom:10px;"><br>` : ''}${txt}</div>`;
+            userDiv.innerHTML = `<div class="msg user-msg">${imagemBase64 ? `<img src="${imagemBase64}" style="width:100%; border-radius:10px; margin-bottom:10px;"><br>` : ''}${txt.replace(/\n/g, '<br>')}</div>`;
             chatWindow.appendChild(userDiv);
             chatWindow.scrollTop = chatWindow.scrollHeight;
 
             const pld = { pergunta: txt, imagem: imagemBase64, session_id: sessionId };
-            textoInput.value = ''; textoInput.style.height = 'auto'; imagemBase64 = null; previewArea.style.display = 'none';
+            textoInput.value = ''; textoInput.style.height = 'auto';
+            const currentImg = imagemBase64; 
+            imagemBase64 = null; previewArea.style.display = 'none';
 
             const loadingId = "loading-" + Date.now();
             const botLoading = document.createElement('div');
             botLoading.className = 'msg-row bot-row'; botLoading.id = loadingId;
-            botLoading.innerHTML = `<div class="msg bot-msg"><i class="fa-solid fa-circle-notch fa-spin"></i> Bastion analisando...</div>`;
+            botLoading.innerHTML = `<div class="msg bot-msg"><i class="fa-solid fa-circle-notch fa-spin"></i> Analisando camadas...</div>`;
             chatWindow.appendChild(botLoading);
 
             try {
@@ -335,7 +330,7 @@
                 botDiv.innerHTML = `<div class="msg bot-msg">${marked.parse(data.resposta)}</div>`;
                 chatWindow.appendChild(botDiv);
             } catch {
-                document.getElementById(loadingId).innerHTML = `<div class="msg bot-msg" style="color:red;">Erro de conexão.</div>`;
+                document.getElementById(loadingId).innerHTML = `<div class="msg bot-msg" style="color:#ef4444;">Erro na conexão com o Bastion.</div>`;
             }
             chatWindow.scrollTop = chatWindow.scrollHeight;
             btnEnviar.disabled = false; btnEnviar.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';

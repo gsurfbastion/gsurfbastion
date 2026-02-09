@@ -15,7 +15,7 @@ load_dotenv()
 # ======================================================
 # CONFIGURAÇÕES
 # ======================================================
-MODEL_ID = "meta-llama/llama-4-scout-17b-16e-instruct" 
+MODEL_ID = "llama-3.2-11b-vision-preview" 
 
 # ======================================================
 # FERRAMENTAS (TOOLS)
@@ -54,12 +54,9 @@ A GSurf atua como o elo de conectividade entre o PDV (Ponto de Venda) e o mundo 
 </contexto_operacional>
 
 <diretrizes_de_analise>
-1. **Visão Computacional (Imagens):** Ao receber fotos de Pinpads ou Terminais:
-   - Identifique o modelo do hardware (Gertec, Pax, Verifone).
-   - Verifique ícones de conectividade (4G, Wi-Fi com "x", Ethernet).
-   - Extraia códigos de erro específicos (ex: "Erro 51", "Z3", "05") e mensagens de display.
-2. **Isolamento de Falhas:** Use lógica dedutiva para descartar problemas antes de apontar culpados.
-3. **Respostas Estruturadas:** Sempre termine com uma "Próxima Ação Recomendada".
+1. **Visão Computacional:** Extraia textos e códigos de erro (Erro 05, 10, 51) de fotos de Pinpads.
+2. **Isolamento:** Determine se a falha é no Emissor, Rede, Adquirente ou Integração.
+3. **Mapa Dinâmico:** Indique qual nó do Mapa de Conhecimento (GSurf, TEF, M-SiTEF ou Adquirente) está com falha.
 </diretrizes_de_analise>
 
 <base_de_conhecimento_tecnica>
@@ -120,22 +117,21 @@ def get_agent():
         )
     return _agent_instance
 
-# ======================================================
-# EXECUÇÃO
-# ======================================================
+# No método executar_agente, adicione esta limpeza de segurança:
 def executar_agente(mensagem_usuario: str, imagem_b64: str = None, session_id: str = "default_session"):
     try:
         agent = get_agent()
-        
-        # 1. Monta o payload da mensagem do usuário
         content_payload = []
-        content_payload.append({"type": "text", "text": mensagem_usuario})
+        
+        # Garante que sempre haja um contexto textual
+        texto_final = mensagem_usuario if mensagem_usuario else "Analise tecnicamente esta imagem de pagamento."
+        content_payload.append({"type": "text", "text": texto_final})
         
         if imagem_b64:
-            if not imagem_b64.startswith("data:"):
-                img_url = f"data:image/jpeg;base64,{imagem_b64}"
-            else:
-                img_url = imagem_b64
+            # Remove cabeçalhos duplicados do Base64 para não confundir a IA
+            pure_base64 = imagem_b64.split(",")[-1] 
+            img_url = f"data:image/jpeg;base64,{pure_base64}"
+            
             content_payload.append({
                 "type": "image_url",
                 "image_url": {"url": img_url}
