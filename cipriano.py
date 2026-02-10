@@ -76,6 +76,10 @@ A GSurf atua como o elo de conectividade entre o PDV (Ponto de Venda) e o mundo 
 * **NOC / Suporte Crítico 24/7:** 0800-644-4833
 * **Escritório Central:** (48) 3254-8900
 * **E-mail Comercial:** comercial@gsurfnet.com
+* **E-mail Suporte:** suporte@gsurfnet.com
+* **E-mail Backoffice:** backoffice@gsurfnet.com
+* **E-mail Tef:** tef@gsurfnet.com
+* **Atendimento Jira:** https://gsurfhelp.atlassian.net/servicedesk/customer/portals
 </canais_escalonamento>
 
 <output_format>
