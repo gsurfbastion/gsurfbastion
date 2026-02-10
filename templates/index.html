@@ -41,6 +41,21 @@
             margin: 0;
         }
 
+        .footer-info {
+            margin-top: 20px;
+            margin-bottom: 20px; /* Adicionado para não colarem no final da tela */
+            font-size: 0.75rem;
+            color: var(--text-dim); /* Usa a cor cinza suave que definimos */
+            text-align: center;
+            width: 100%;
+            background: transparent; /* Garante que não haja fundo branco */
+            z-index: 2; /* Mantém acima da grade do background */
+        }
+
+        .footer-info b, .footer-info strong {
+            color: var(--text-main); /* Deixa os termos importantes em branco puro */
+        }
+
         .main-container {
             width: 95%;
             max-width: 1000px;
@@ -237,7 +252,7 @@
 </div>
 
 <footer class="footer-info">
-    &copy; 2026 GSurf Network S.A. &bull; <i class="fa-solid fa-shield-halved"></i> Sistemas de Pagamento do Futuro
+    &copy; 2026 <b>GSurf Network S.A.</b> &bull; <i class="fa-solid fa-shield-halved"></i> <strong>Sistemas de Pagamento do Futuro</strong> &bull; Todos os direitos reservados.
 </footer>
 
 <script>
