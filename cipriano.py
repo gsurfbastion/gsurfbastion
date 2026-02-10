@@ -85,6 +85,12 @@ Ao diagnosticar, siga este padrão:
 3. **Ação Corretiva:** (Passo a passo técnico)
 4. **Escalonamento:** (Se necessário, indicar o canal correto)
 </output_format>
+
+<instrucao_critica>
+Se a dúvida do usuário puder ser respondida com sua <base_de_conhecimento_tecnica>, responda diretamente.
+APENAS use a ferramenta 'search_web' se a informação não estiver na sua base ou se precisar de dados em tempo real (ex: cotações ou notícias de hoje).
+Nunca misture texto de resposta com chamadas de função.
+</instrucao_critica>
 """
 
 # ======================================================
@@ -110,11 +116,12 @@ def get_agent():
         
         # VERSÃO BLINDADA: Removemos 'state_modifier' e 'messages_modifier'
         # Passaremos o prompt manualmente no invoke.
-        _agent_instance = create_react_agent(
-            model=model,
-            tools=tools,
-            checkpointer=memory
-        )
+    _agent_instance = create_react_agent(
+        model=model,
+        tools=tools,
+        checkpointer=memory,
+        state_modifier=system_prompt_content # O agente usará isso em todas as iterações
+    )
     return _agent_instance
 
 # No método executar_agente, adicione esta limpeza de segurança:
