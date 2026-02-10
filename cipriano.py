@@ -116,12 +116,11 @@ def get_agent():
         
         # VERSÃO BLINDADA: Removemos 'state_modifier' e 'messages_modifier'
         # Passaremos o prompt manualmente no invoke.
-    _agent_instance = create_react_agent(
-        model=model,
-        tools=tools,
-        checkpointer=memory,
-        state_modifier=system_prompt_content # O agente usará isso em todas as iterações
-    )
+        _agent_instance = create_react_agent(
+            model=model,
+            tools=tools,
+            checkpointer=memory
+        )
     return _agent_instance
 
 # No método executar_agente, adicione esta limpeza de segurança:
