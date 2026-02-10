@@ -26,6 +26,11 @@
 
         body {
             background: var(--bg-gradient);
+            /* Grade tecnológica sutil */
+            background-image: 
+                linear-gradient(rgba(0, 98, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 98, 255, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
             color: var(--text-main);
             font-family: 'Inter', sans-serif;
             display: flex;
@@ -33,21 +38,21 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            overflow: hidden;
+            margin: 0;
         }
 
         .main-container {
             width: 95%;
             max-width: 1000px;
             height: 85vh;
-            background: var(--surface);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--glass-border);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 24px;
             display: flex;
             flex-direction: column;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            background: rgba(15, 17, 20, 0.9);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
             position: relative;
             z-index: 1;
         }
@@ -79,14 +84,30 @@
             scrollbar-width: thin;
         }
 
+        #chat-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: auto;
+            opacity: 0.2;
+            text-align: center;
+            pointer-events: none;
+        }
+
         .msg-row { display: flex; width: 100%; animation: fadeInUp 0.3s ease; }
         .user-row { justify-content: flex-end; }
         .bot-row { justify-content: flex-start; }
 
         .msg {
-            max-width: 75%; padding: 16px 20px; border-radius: 20px;
-            font-size: 0.95rem; line-height: 1.6; position: relative;
-            word-break: break-word; overflow-wrap: anywhere;
+            max-width: 75%;
+            padding: 16px 20px;
+            border-radius: 20px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.2s ease;
         }
 
         .user-msg { background: var(--user-bubble); color: white; border-bottom-right-radius: 4px; }
@@ -124,7 +145,6 @@
             display: flex; align-items: center; justify-content: center;
         }
 
-        /* Modal Grafo */
         #graph-modal {
             display: none; position: fixed; top: 50%; left: 50%;
             transform: translate(-50%, -50%); width: 85%; height: 75vh;
@@ -134,7 +154,6 @@
         }
         #cy { width: 100%; height: 90%; border-radius: 15px; }
 
-        /* Modal Câmera */
         #camera-modal {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #000; z-index: 11000; flex-direction: column; align-items: center; justify-content: center;
@@ -169,6 +188,11 @@
     </header>
 
     <div id="chat-window">
+        <div id="chat-placeholder">
+            <i class="fa-solid fa-microchip" style="font-size: 4rem; margin-bottom: 20px;"></i>
+            <p style="font-size: 1.1rem; font-weight: 300;">Aguardando entrada de dados...</p>
+        </div>
+
         <div class="msg-row bot-row">
             <div class="msg bot-msg">
                 <strong>Sistemas Online.</strong><br>
@@ -186,8 +210,8 @@
         </div>
         <div class="input-controls">
             <input type="file" id="file-input" accept="image/*" style="display: none;">
-            <button class="btn-action" id="btn-anexar"><i class="fa-solid fa-file-import"></i></button>
-            <button class="btn-action" id="btn-camera-live"><i class="fa-solid fa-camera"></i></button>
+            <button class="btn-action" id="btn-anexar" title="Importar arquivo"><i class="fa-solid fa-file-import"></i></button>
+            <button class="btn-action" id="btn-camera-live" title="Câmera em tempo real"><i class="fa-solid fa-camera"></i></button>
             <textarea id="texto-input" rows="1" placeholder="Descreva o incidente ou anexe uma imagem..."></textarea>
             <button class="btn-send" id="btn-enviar"><i class="fa-solid fa-paper-plane"></i></button>
         </div>
@@ -235,7 +259,6 @@
         let sessionId = localStorage.getItem("gsurf_session_id") || "sess_" + Math.random().toString(36).substr(2, 9);
         localStorage.setItem("gsurf_session_id", sessionId);
 
-        // --- DINÂMICA DO GRAFO ---
         window.toggleGraph = async function() {
             const modal = document.getElementById('graph-modal');
             const isVisible = modal.style.display === 'block';
@@ -259,7 +282,6 @@
             }
         };
 
-        // --- CÂMERA E ARQUIVOS ---
         btnCameraLive.onclick = async () => {
             try {
                 streamAtivo = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
@@ -296,10 +318,12 @@
 
         document.getElementById('btn-remover-img').onclick = () => { imagemBase64 = null; previewArea.style.display = 'none'; };
 
-        // --- ENVIO ---
         async function enviar() {
             const txt = textoInput.value.trim();
             if (!txt && !imagemBase64) return;
+
+            const placeholder = document.getElementById('chat-placeholder');
+            if (placeholder) placeholder.remove();
 
             btnEnviar.disabled = true; btnEnviar.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
@@ -311,7 +335,6 @@
 
             const pld = { pergunta: txt, imagem: imagemBase64, session_id: sessionId };
             textoInput.value = ''; textoInput.style.height = 'auto';
-            const currentImg = imagemBase64; 
             imagemBase64 = null; previewArea.style.display = 'none';
 
             const loadingId = "loading-" + Date.now();
@@ -330,7 +353,8 @@
                 botDiv.innerHTML = `<div class="msg bot-msg">${marked.parse(data.resposta)}</div>`;
                 chatWindow.appendChild(botDiv);
             } catch {
-                document.getElementById(loadingId).innerHTML = `<div class="msg bot-msg" style="color:#ef4444;">Erro na conexão com o Bastion.</div>`;
+                const loadEl = document.getElementById(loadingId);
+                if (loadEl) loadEl.innerHTML = `<div class="msg bot-msg" style="color:#ef4444;">Erro na conexão com o Bastion.</div>`;
             }
             chatWindow.scrollTop = chatWindow.scrollHeight;
             btnEnviar.disabled = false; btnEnviar.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
